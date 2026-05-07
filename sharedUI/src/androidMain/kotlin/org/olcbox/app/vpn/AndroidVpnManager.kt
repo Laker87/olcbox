@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.olcbox.app.data.model.LocationConfig
 import org.olcbox.app.vpn.data.KEY_ANDROID_CONNECTION_MODE
+import org.olcbox.app.vpn.data.KEY_ANDROID_LANGUAGE
 import org.olcbox.app.vpn.data.KEY_ANDROID_SPLIT_TUNNEL_BYPASS_APPS
 import org.olcbox.app.vpn.data.KEY_ANDROID_SPLIT_TUNNEL_MODE
 import org.olcbox.app.vpn.data.KEY_ANDROID_SPLIT_TUNNEL_PROXY_APPS
@@ -36,6 +37,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     private val _proxySettings = MutableStateFlow(AndroidSocksProxySettings())
     private val _splitTunnelSettings = MutableStateFlow(AndroidSplitTunnelSettings())
     private val _installedApps = MutableStateFlow<List<AndroidInstalledApp>>(emptyList())
+    private val _language = MutableStateFlow<String?>(null)
 
     override val logs: StateFlow<List<String>> = OlcboxVpnState.logs
     override val status: StateFlow<VpnStatus> = OlcboxVpnState.status
@@ -44,6 +46,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     val proxySettings: StateFlow<AndroidSocksProxySettings> = _proxySettings.asStateFlow()
     val splitTunnelSettings: StateFlow<AndroidSplitTunnelSettings> = _splitTunnelSettings.asStateFlow()
     val installedApps: StateFlow<List<AndroidInstalledApp>> = _installedApps.asStateFlow()
+    val language: StateFlow<String?> = _language.asStateFlow()
 
     init {
         scope.launch {
