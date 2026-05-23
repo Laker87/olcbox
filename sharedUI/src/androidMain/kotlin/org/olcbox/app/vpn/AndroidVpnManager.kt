@@ -25,6 +25,8 @@ import org.olcbox.app.data.model.LocationConfig
 import org.olcbox.app.data.datasource.LocationsDataSourceImpl
 import org.olcbox.app.data.identity.PersistentDeviceIdentityProvider
 import org.olcbox.app.data.repository.SubscriptionFetchProxy
+import org.olcbox.app.settings.AppLanguage
+import org.olcbox.app.vpn.data.KEY_ANDROID_APP_LANGUAGE
 import org.olcbox.app.vpn.data.KEY_ANDROID_CONNECTION_MODE
 import org.olcbox.app.vpn.data.KEY_ANDROID_DYNAMIC_THEME
 import org.olcbox.app.vpn.data.KEY_ANDROID_SPLIT_TUNNEL_BYPASS_APPS
@@ -47,6 +49,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     private val _proxySettings = MutableStateFlow(AndroidSocksProxySettings())
     private val _splitTunnelSettings = MutableStateFlow(AndroidSplitTunnelSettings())
     private val _dynamicThemeEnabled = MutableStateFlow(true)
+    private val _appLanguage = MutableStateFlow(AppLanguage.System)
     private val _installedApps = MutableStateFlow<List<AndroidInstalledApp>>(emptyList())
     private val deviceIdentityProvider = PersistentDeviceIdentityProvider(
         LocationsDataSourceImpl(appContext)
@@ -59,6 +62,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     val proxySettings: StateFlow<AndroidSocksProxySettings> = _proxySettings.asStateFlow()
     val splitTunnelSettings: StateFlow<AndroidSplitTunnelSettings> = _splitTunnelSettings.asStateFlow()
     val dynamicThemeEnabled: StateFlow<Boolean> = _dynamicThemeEnabled.asStateFlow()
+    val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
     val installedApps: StateFlow<List<AndroidInstalledApp>> = _installedApps.asStateFlow()
 
     init {
@@ -88,7 +92,8 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
                         mode = mode,
                         proxy = proxy,
                         splitTunnel = splitTunnel,
-                        dynamicThemeEnabled = preferences[KEY_ANDROID_DYNAMIC_THEME] != false
+                        dynamicThemeEnabled = preferences[KEY_ANDROID_DYNAMIC_THEME] != false,
+                        appLanguage = AppLanguage.fromPreference(preferences[KEY_ANDROID_APP_LANGUAGE])
                     )
                 }
                 .collect { settings ->
@@ -96,6 +101,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
                     _proxySettings.value = settings.proxy
                     _splitTunnelSettings.value = settings.splitTunnel
                     _dynamicThemeEnabled.value = settings.dynamicThemeEnabled
+                    _appLanguage.value = settings.appLanguage
                 }
         }
         refreshInstalledApps()
@@ -121,6 +127,15 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
         scope.launch {
             appContext.vpnPrefDataStore.edit { preferences ->
                 preferences[KEY_ANDROID_DYNAMIC_THEME] = enabled
+            }
+        }
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        _appLanguage.value = language
+        scope.launch {
+            appContext.vpnPrefDataStore.edit { preferences ->
+                preferences[KEY_ANDROID_APP_LANGUAGE] = language.preferenceValue
             }
         }
     }
@@ -358,7 +373,8 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
         val mode: AndroidConnectionMode,
         val proxy: AndroidSocksProxySettings,
         val splitTunnel: AndroidSplitTunnelSettings,
-        val dynamicThemeEnabled: Boolean
+        val dynamicThemeEnabled: Boolean,
+        val appLanguage: AppLanguage
     )
 
     private companion object {
